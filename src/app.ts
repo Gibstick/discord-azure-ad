@@ -4,18 +4,7 @@ import dotenv from "dotenv";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 
-/**
- * Returns the value of environment variable `name`.
- * Throws Error if undefined.
- * @param name - name of environment variable.
- */
-const env = (name: string): string => {
-  const value = process.env[name];
-  if (value === undefined) {
-    throw new Error(`Missing environment variable: ${name}.`);
-  }
-  return value;
-};
+import { env } from "./env";
 
 dotenv.config();
 
@@ -120,4 +109,4 @@ app.get("/redirect", (req: express.Request, res: express.Response) => {
     });
 });
 
-app.listen(port, () => {});
+export default app;

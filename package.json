@@ -2,11 +2,11 @@
   "name": "azure-ad-to-discord",
   "version": "0.1",
   "description": "Web application to connect Azure AD and Discord identities ",
-  "main": "app.js",
+  "main": "src/main.js",
   "license": "MIT",
   "scripts": {
-    "lint": "eslint '*.ts' --quiet --fix",
-    "dev": "ts-node-dev --respawn --transpile-only src/app.ts"
+    "lint": "eslint 'src/**/*.ts' --quiet --fix",
+    "dev": "ts-node-dev --respawn --transpile-only src/main.ts"
   },
   "dependencies": {
     "@azure/msal-node": "^1.3.0",
