@@ -4,13 +4,6 @@ import dotenv from "dotenv";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 
-declare module "express-session" {
-  interface SessionData {
-    azureADVerified?: boolean;
-    discordVerified?: boolean;
-  }
-}
-
 /**
  * Returns the value of environment variable `name`.
  * Throws Error if undefined.
