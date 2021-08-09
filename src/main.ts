@@ -1,7 +1,9 @@
 import app from "./app";
-import client from "./bot";
+import CreateBot from "./bot";
 
 import { env } from "./env";
 
 app.listen(3000, () => {});
-client.login(env("BOT_TOKEN"));
+
+const bot = CreateBot();
+bot.login(env("BOT_TOKEN"));
