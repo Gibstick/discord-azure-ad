@@ -31,7 +31,6 @@ const CreateApp = () => {
   const msClientApp = new msal.ConfidentialClientApplication(msalConfig);
 
   const app = express();
-  const port = 3000;
 
   let sessionSecret = process.env["SESSION_SECRET"] ?? null;
   sessionSecret ??= (console.log("Using randomly generated session secret"), randomBytes(32).toString("hex"));
