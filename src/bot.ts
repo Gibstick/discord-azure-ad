@@ -4,7 +4,7 @@ import VerifyEventEmitter from "./event";
 import { env } from "./env";
 import { VerificationMessage } from "./message";
 import moment from "moment";
-import { decrypt, encrypt } from "./crypto";
+import { encrypt } from "./crypto";
 
 const CreateBot = (verifyEventEmitter: VerifyEventEmitter, secretKey: Uint8Array): Client => {
   const roleName = env("VERIFIED_ROLE_NAME");
