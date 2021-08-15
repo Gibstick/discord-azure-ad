@@ -18,16 +18,10 @@ export interface BotConfig {
 const CreateBot = (config: BotConfig): Client => {
   const { ee, secretKey, verifiedRoleName } = config;
 
-  const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
+  const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
   client.once("ready", async () => {
     console.log("Ready!");
-    for (const guild of client.guilds.cache.values()) {
-      for (const command of commands) {
-        const created = await guild.commands.create(command);
-        console.log("Created command", command.name);
-      }
-    }
   });
 
   ee.registerHandler(async (userId, guildId) => {
@@ -123,7 +117,7 @@ const CreateBot = (config: BotConfig): Client => {
     if (message.content.toLowerCase() === "!deploy" && message.author.id === ownerId) {
       for (const guild of client.guilds.cache.values()) {
         for (const command of commands) {
-          const created = await guild.commands.create(command);
+          await guild.commands.create(command);
           console.log("Created command", command.name);
         }
       }
