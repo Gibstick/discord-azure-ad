@@ -7,7 +7,7 @@ import moment from "moment";
 import { encrypt } from "./crypto";
 
 const CreateBot = (verifyEventEmitter: VerifyEventEmitter, secretKey: Uint8Array): Client => {
-  const roleName = env("VERIFIED_ROLE_NAME");
+  const roleName = env("DISCORD_AAD_VERIFIED_ROLE_NAME");
   const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 
   client.once("ready", async () => {

@@ -13,9 +13,9 @@ import { isExpired, isVerificationMessage, VerificationMessage } from "./message
 const CreateApp = (verifyEventEmitter: VerifyEventEmitter, secretKey: Uint8Array) => {
   const msalConfig: msal.Configuration = {
     auth: {
-      clientId: env("AAD_CLIENT_ID"),
-      authority: `https://login.microsoftonline.com/${env("AAD_ALLOWED_TENANT")}/`,
-      clientSecret: env("AAD_CLIENT_SECRET"),
+      clientId: env("DISCORD_AAD_CLIENT_ID"),
+      authority: `https://login.microsoftonline.com/${env("DISCORD_AAD_ALLOWED_TENANT")}/`,
+      clientSecret: env("DISCORD_AAD_CLIENT_SECRET"),
     },
     system: {
       loggerOptions: {

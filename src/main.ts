@@ -16,4 +16,4 @@ const app = CreateApp(ee, key);
 const bot = CreateBot(ee, key);
 
 app.listen(3000, () => {});
-bot.login(env("BOT_TOKEN"));
+bot.login(env("DISCORD_AAD_BOT_TOKEN"));
