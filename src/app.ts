@@ -89,7 +89,6 @@ const CreateApp = (verifyEventEmitter: VerifyEventEmitter, secretKey: Uint8Array
   });
 
   app.get("/verify", async (req: express.Request, res: express.Response) => {
-    console.log("/verify");
     if (!req.session.verificationMessage) {
       res.redirect("/");
     }

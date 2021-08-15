@@ -8,7 +8,7 @@ import { decrypt, encrypt } from "./crypto";
 
 const CreateBot = (verifyEventEmitter: VerifyEventEmitter, secretKey: Uint8Array): Client => {
   const roleName = env("VERIFIED_ROLE_NAME");
-  const client = new Client({ intents: [Intents.FLAGS.GUILD_MESSAGES] });
+  const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 
   client.once("ready", async () => {
     console.log("Ready!");
@@ -73,7 +73,6 @@ const CreateBot = (verifyEventEmitter: VerifyEventEmitter, secretKey: Uint8Array
         };
 
         const encodedMessage = encrypt(verificationMessage, secretKey);
-        console.log(decrypt(encodedMessage, secretKey));
         // TODO: don't hardcode the link
         await interaction.reply({
           content: "http://localhost:3000/start?m=" + encodedMessage,
