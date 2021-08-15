@@ -1,7 +1,8 @@
+import { VerificationMessage } from "../message";
+
 declare module "express-session" {
   interface SessionData {
-    azureADVerified?: boolean;
-    discordVerified?: boolean;
+    verificationMessage?: VerificationMessage;
   }
 }
 

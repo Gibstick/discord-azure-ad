@@ -2,15 +2,15 @@ import { randomBytes } from "node:crypto";
 
 import express from "express";
 import * as msal from "@azure/msal-node";
-import dotenv from "dotenv";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 
 import { env } from "./env";
+import VerifyEventEmitter from "./event";
+import { decrypt } from "./crypto";
+import { isExpired, isVerificationMessage, VerificationMessage } from "./message";
 
-const CreateApp = () => {
-  dotenv.config();
-
+const CreateApp = (verifyEventEmitter: VerifyEventEmitter, secretKey: Uint8Array) => {
   const msalConfig: msal.Configuration = {
     auth: {
       clientId: env("AAD_CLIENT_ID"),
@@ -46,7 +46,7 @@ const CreateApp = () => {
       cookie: {
         sameSite: "lax", // FIXME: sameSite strict doesn't work??
         httpOnly: true,
-        maxAge: 60 * 60 * 1000, // 1 hour sessions
+        maxAge: 15 * 60 * 1000, // 15m sessions
       },
       resave: false,
       rolling: true,
@@ -55,8 +55,44 @@ const CreateApp = () => {
 
   app.set("view engine", "ejs");
 
-  app.get("/", async (req: express.Request, res: express.Response) => {
-    console.log(req.session);
+  app.get("/", async (_req: express.Request, res: express.Response) => {
+    res.render("index", {});
+  });
+
+  app.get("/start", (req: express.Request, res: express.Response) => {
+    const encodedMessage = req.query.m;
+    if (typeof encodedMessage !== "string") {
+      // TODO: Render error message
+      res.status(400).send("Error 400: invalid message.");
+      return;
+    }
+
+    let plain: VerificationMessage;
+    try {
+      plain = decrypt(encodedMessage, secretKey) as VerificationMessage;
+    } catch (_e) {
+      res.status(400).send("Error 400: invalid message.");
+      return;
+    }
+    if (!isVerificationMessage(plain)) {
+      res.status(400).send("Error 400: invalid decrypted message.");
+      return;
+    }
+
+    if (isExpired(plain)) {
+      res.status(400).send("Error 400: expired message.");
+      return;
+    }
+
+    req.session.verificationMessage = plain;
+    res.redirect("/verify");
+  });
+
+  app.get("/verify", async (req: express.Request, res: express.Response) => {
+    console.log("/verify");
+    if (!req.session.verificationMessage) {
+      res.redirect("/");
+    }
 
     const authUrlRequest: msal.AuthorizationUrlRequest = {
       scopes: ["user.read"],
@@ -65,16 +101,12 @@ const CreateApp = () => {
     };
     const authCodeUrl = msClientApp.getAuthCodeUrl(authUrlRequest);
 
-    res.render("index", {
+    res.render("verify", {
       loginLink: await authCodeUrl,
-      foo: "Bar",
-      azureADVerified: req.session?.azureADVerified,
-      discordVerified: req.session?.discordVerified,
     });
   });
 
   app.get("/redirect", (req: express.Request, res: express.Response) => {
-    console.log(req.query);
     // Why don't we use the implicit flow here? Microsoft has scary-sounding
     // documentation [1] about how bad the implicit grant flow is, and how it's
     // broken because of browsers blocking third party cookies. Since we need only
@@ -83,6 +115,12 @@ const CreateApp = () => {
     // to migrate to the Auth Code + PKCE flow instead. The extra latency of doing
     // the auth code grant doesn't matter to us so let's just do that.
     // [1]: https://docs.microsoft.com/en-ca/azure/active-directory/develop/v2-oauth2-implicit-grant-flow
+
+    if (!req.session.verificationMessage) {
+      req.session.destroy(() => {});
+      res.status(400).send("Invalid session.");
+      return;
+    }
 
     const authorizationCode = req.query.code;
     if (typeof authorizationCode !== "string") {
@@ -104,8 +142,10 @@ const CreateApp = () => {
 
     msClientApp
       .acquireTokenByCode(tokenRequest)
-      .then((response) => {
-        req.session.azureADVerified = true;
+      .then((_response) => {
+        console.log("VERIFIED");
+        const discordData = req.session.verificationMessage!.discord;
+        verifyEventEmitter.emitVerification(discordData.userId, discordData.guildId);
         res.redirect("/");
       })
       .catch((error) => {

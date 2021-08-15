@@ -1,10 +1,49 @@
-import { Client, Collection, Intents, Command } from "discord.js";
+import { Client, Collection, Command, Intents } from "discord.js";
 
-const CreateBot = (): Client => {
-  const client = new Client({ intents: [] });
+import VerifyEventEmitter from "./event";
+import { env } from "./env";
+import { VerificationMessage } from "./message";
+import moment from "moment";
+import { decrypt, encrypt } from "./crypto";
 
-  client.once("ready", () => {
+const CreateBot = (verifyEventEmitter: VerifyEventEmitter, secretKey: Uint8Array): Client => {
+  const roleName = env("VERIFIED_ROLE_NAME");
+  const client = new Client({ intents: [Intents.FLAGS.GUILD_MESSAGES] });
+
+  client.once("ready", async () => {
     console.log("Ready!");
+    for (const guild of client.guilds.cache.values()) {
+      for (const command of commands) {
+        const created = await guild.commands.create(command);
+        console.log("Created command", command.name);
+      }
+    }
+  });
+
+  verifyEventEmitter.registerHandler(async (userId, guildId) => {
+    const guild = client.guilds.resolve(guildId);
+    if (!guild) {
+      console.warn(`Attempted to handle invalid Guild ID ${guildId}`);
+      return;
+    }
+
+    const member = guild.members.resolve(userId);
+    if (!member) {
+      console.warn(`Attempted to handle invalid user ID ${userId}`);
+      return;
+    }
+
+    // TODO: get the role in a smarter way.
+    const roleToAssign = guild.roles.cache.find((role, _key, _collection) => {
+      return role.name === roleName;
+    });
+
+    if (!roleToAssign) {
+      console.warn(`Role ${roleName} not found in guild ${guildId}`);
+      return;
+    }
+
+    await member.roles.add(roleToAssign, "Successful verification");
   });
 
   const commands: Command[] = [
@@ -14,6 +53,32 @@ const CreateBot = (): Client => {
       async execute(interaction) {
         const delta = Date.now() - interaction.createdTimestamp;
         await interaction.reply(`:ping_pong: ${delta}`);
+      },
+    },
+    {
+      name: "verify",
+      description: "Begin the verification process",
+      async execute(interaction) {
+        const guildId = interaction.guildId;
+        if (!guildId) {
+          return;
+        }
+        const userId = interaction.user.id;
+        const verificationMessage: VerificationMessage = {
+          expiryTs: moment().add(15, "m").unix(),
+          discord: {
+            guildId,
+            userId,
+          },
+        };
+
+        const encodedMessage = encrypt(verificationMessage, secretKey);
+        console.log(decrypt(encodedMessage, secretKey));
+        // TODO: don't hardcode the link
+        await interaction.reply({
+          content: "http://localhost:3000/start?m=" + encodedMessage,
+          ephemeral: true,
+        });
       },
     },
   ];
