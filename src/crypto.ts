@@ -7,8 +7,12 @@ const newNonce = () => randomBytes(secretbox.nonceLength);
 
 export const generateKey = () => randomBytes(secretbox.keyLength);
 
-// encrypt a JSON-stringifiable message using the given key and return
-// cihpertext + nonce.
+/**
+ * encrypt a JSON-stringifiable message using the given key and return
+ * ciphertext + nonce.
+ *
+ * See also {@link decrypt}.
+ */
 export const encrypt = (payload: any, key: Uint8Array): string => {
   const nonce = newNonce();
   const messageBuf = Buffer.from(JSON.stringify(payload), STRING_ENCODING);
@@ -22,8 +26,13 @@ export const encrypt = (payload: any, key: Uint8Array): string => {
   return base64FullMessage;
 };
 
-// decrypt takes a ciphertext + nonce encoded string and returns an
-// JSON-deserialized object.
+/**
+ * decrypt takes a ciphertext + nonce encoded string and returns an
+ * JSON-deserialized object.
+ *
+ * See also {@link encrypt}, which is where the input to this function should
+ * come from.
+ */
 export const decrypt = (messageWithNonce: string, key: Uint8Array): any => {
   const messageBuf = Buffer.from(messageWithNonce, BUFFER_ENCODING);
   const nonce = messageBuf.slice(0, secretbox.nonceLength);
