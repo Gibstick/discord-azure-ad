@@ -1,4 +1,5 @@
 import { secretbox, randomBytes } from "tweetnacl";
+import { HKDF } from "@aws-crypto/hkdf-node";
 
 const STRING_ENCODING = "utf-8";
 const BUFFER_ENCODING = "base64url";
@@ -44,4 +45,18 @@ export const decrypt = (messageWithNonce: string, key: Uint8Array): any => {
   }
 
   return JSON.parse(Buffer.from(decrypted).toString(STRING_ENCODING));
+};
+
+/**
+ * keyFromString uses a key derivation function to generate a key from a string
+ * secret.
+ *
+ *
+ * @param str A string of secret material from which to derive a key.
+ * @returns A secret key.
+ */
+export const keyFromString = (str: string): Uint8Array => {
+  const expand = HKDF("sha256")(str, "");
+  const key = expand(secretbox.keyLength);
+  return key;
 };

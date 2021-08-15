@@ -4,13 +4,20 @@ import CreateApp, { ServerConfig } from "./app";
 import CreateBot from "./bot";
 import VerifyEventEmitter from "./event";
 import { env } from "./env";
-import { generateKey } from "./crypto";
+import { generateKey, keyFromString } from "./crypto";
 
 dotenv.config();
 
 const ee = new VerifyEventEmitter();
 
-const secretKey = generateKey();
+let secretKey: Uint8Array;
+const secretFromEnv = process.env["DISCORD_AAD_VERIFICATION_SECRET"];
+if (secretFromEnv) {
+  secretKey = keyFromString(secretFromEnv);
+} else {
+  secretKey = generateKey();
+}
+
 const verifiedRoleName = "UW Verified"; // TODO: don't hardcode this
 
 const serverConfig: ServerConfig = {

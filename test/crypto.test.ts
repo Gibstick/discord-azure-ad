@@ -34,4 +34,14 @@ describe("crypto tests", () => {
     assert.throws(() => crypto.decrypt(tampered, key));
     assert.throws(() => crypto.decrypt(tampered, wrongKey));
   });
+
+  it("kdf", () => {
+    const keyMaterial = "foobar";
+    const key1 = crypto.keyFromString(keyMaterial);
+    const key2 = crypto.keyFromString(keyMaterial);
+
+    const plain = "hello world";
+
+    assert.equal(crypto.decrypt(crypto.encrypt(plain, key1), key2), plain);
+  });
 });
