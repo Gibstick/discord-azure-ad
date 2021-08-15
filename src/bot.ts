@@ -1,13 +1,23 @@
 import { Client, Collection, Command, Intents } from "discord.js";
 
 import VerifyEventEmitter from "./event";
-import { env } from "./env";
 import { VerificationMessage } from "./message";
 import moment from "moment";
 import { encrypt } from "./crypto";
 
-const CreateBot = (verifyEventEmitter: VerifyEventEmitter, secretKey: Uint8Array): Client => {
-  const roleName = env("DISCORD_AAD_VERIFIED_ROLE_NAME");
+/** Configuration for the Discord bot. */
+export interface BotConfig {
+  /** An event emitter that can be used to emit verification events. */
+  ee: VerifyEventEmitter;
+  /** A secret key used for NaCl's box interface, for encryption. */
+  secretKey: Uint8Array;
+  /** Name of the role to apply to verified users. */
+  verifiedRoleName: string;
+}
+
+const CreateBot = (config: BotConfig): Client => {
+  const { ee, secretKey, verifiedRoleName } = config;
+
   const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 
   client.once("ready", async () => {
@@ -20,7 +30,7 @@ const CreateBot = (verifyEventEmitter: VerifyEventEmitter, secretKey: Uint8Array
     }
   });
 
-  verifyEventEmitter.registerHandler(async (userId, guildId) => {
+  ee.registerHandler(async (userId, guildId) => {
     const guild = client.guilds.resolve(guildId);
     if (!guild) {
       console.warn(`Attempted to handle invalid Guild ID ${guildId}`);
@@ -35,11 +45,11 @@ const CreateBot = (verifyEventEmitter: VerifyEventEmitter, secretKey: Uint8Array
 
     // TODO: get the role in a smarter way.
     const roleToAssign = guild.roles.cache.find((role, _key, _collection) => {
-      return role.name === roleName;
+      return role.name === verifiedRoleName;
     });
 
     if (!roleToAssign) {
-      console.warn(`Role ${roleName} not found in guild ${guildId}`);
+      console.warn(`Role ${verifiedRoleName} not found in guild ${guildId}`);
       return;
     }
 

@@ -5,17 +5,37 @@ import * as msal from "@azure/msal-node";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 
-import { env } from "./env";
 import VerifyEventEmitter from "./event";
 import { decrypt } from "./crypto";
 import { isExpired, isVerificationMessage, VerificationMessage } from "./message";
 
-const CreateApp = (verifyEventEmitter: VerifyEventEmitter, secretKey: Uint8Array) => {
+/** Configuration for the server. */
+export interface ServerConfig {
+  /** An event emitter that can be used to register handlers for verification events. */
+  ee: VerifyEventEmitter;
+  /** A secret key used for NaCl's box interface, for encryption. */
+  secretKey: Uint8Array;
+  /** A secret key used for express-session. */
+  sessionSecret: string | null | undefined;
+  ms: {
+    clientId: string;
+    clientSecret: string;
+    allowedTenantId: string;
+  };
+}
+
+const CreateApp = (config: ServerConfig) => {
+  const {
+    ee,
+    secretKey,
+    ms: { clientId, clientSecret, allowedTenantId },
+  } = config;
+
   const msalConfig: msal.Configuration = {
     auth: {
-      clientId: env("DISCORD_AAD_CLIENT_ID"),
-      authority: `https://login.microsoftonline.com/${env("DISCORD_AAD_ALLOWED_TENANT")}/`,
-      clientSecret: env("DISCORD_AAD_CLIENT_SECRET"),
+      clientId,
+      authority: `https://login.microsoftonline.com/${allowedTenantId}/`,
+      clientSecret,
     },
     system: {
       loggerOptions: {
@@ -32,7 +52,7 @@ const CreateApp = (verifyEventEmitter: VerifyEventEmitter, secretKey: Uint8Array
 
   const app = express();
 
-  let sessionSecret = process.env["SESSION_SECRET"] ?? null;
+  let { sessionSecret } = config;
   sessionSecret ??= (console.log("Using randomly generated session secret"), randomBytes(32).toString("hex"));
 
   const MemoryStore = createMemoryStore(session);
@@ -144,7 +164,7 @@ const CreateApp = (verifyEventEmitter: VerifyEventEmitter, secretKey: Uint8Array
       .then((_response) => {
         console.log("VERIFIED");
         const discordData = req.session.verificationMessage!.discord;
-        verifyEventEmitter.emitVerification(discordData.userId, discordData.guildId);
+        ee.emitVerification(discordData.userId, discordData.guildId);
         res.redirect("/");
       })
       .catch((error) => {
