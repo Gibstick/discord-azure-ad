@@ -1,4 +1,5 @@
 import { Client, Collection, Command, Intents } from "discord.js";
+import bunyan from "bunyan";
 
 import VerifyEventEmitter from "./event";
 import { VerificationMessage } from "./message";
@@ -16,24 +17,25 @@ export interface BotConfig {
 }
 
 const CreateBot = (config: BotConfig): Client => {
+  const log = bunyan.createLogger({ name: "bot" });
   const { ee, secretKey, verifiedRoleName } = config;
 
   const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
   client.once("ready", async () => {
-    console.log("Ready!");
+    log.info("Ready!");
   });
 
   ee.registerHandler(async (userId, guildId) => {
     const guild = client.guilds.resolve(guildId);
     if (!guild) {
-      console.warn(`Attempted to handle invalid Guild ID ${guildId}`);
+      log.warn({ guildId }, "Attempted to handle invalid Guild");
       return;
     }
 
     const member = guild.members.resolve(userId);
     if (!member) {
-      console.warn(`Attempted to handle invalid user ID ${userId}`);
+      log.warn({ userId, guildId }, "Attempted to handle invalid user");
       return;
     }
 
@@ -43,7 +45,7 @@ const CreateBot = (config: BotConfig): Client => {
     });
 
     if (!roleToAssign) {
-      console.warn(`Role ${verifiedRoleName} not found in guild ${guildId}`);
+      log.warn({ verifiedRoleName, guildId, userId }, "Verified role not found in guild");
       return;
     }
 
@@ -100,7 +102,7 @@ const CreateBot = (config: BotConfig): Client => {
       const command = client.commands.get(interaction.commandName);
       command?.execute(interaction);
     } catch (error) {
-      console.error(error);
+      log.error({ err: error, msg: "Error excecuting command", command: interaction.commandName });
       await interaction.reply({
         content: "There was an error while executing this command!",
         ephemeral: true,
@@ -118,7 +120,7 @@ const CreateBot = (config: BotConfig): Client => {
       for (const guild of client.guilds.cache.values()) {
         for (const command of commands) {
           await guild.commands.create(command);
-          console.log("Created command", command.name);
+          log.info("Command created: %s", command.name);
         }
       }
     }

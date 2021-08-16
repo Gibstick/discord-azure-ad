@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import bunyan from "bunyan";
 
 import CreateApp, { ServerConfig } from "./app";
 import CreateBot from "./bot";
@@ -7,6 +8,7 @@ import { env } from "./env";
 import { generateKey, keyFromString } from "./crypto";
 
 dotenv.config();
+const log = bunyan.createLogger({ name: "main" });
 
 const ee = new VerifyEventEmitter();
 
@@ -14,8 +16,10 @@ let secretKey: Uint8Array;
 const secretFromEnv = process.env["DISCORD_AAD_VERIFICATION_SECRET"];
 if (secretFromEnv) {
   secretKey = keyFromString(secretFromEnv);
+  log.info("Deriving verification secret key from environment variable.");
 } else {
   secretKey = generateKey();
+  log.info("Generating random verification secret key.");
 }
 
 const verifiedRoleName = "UW Verified"; // TODO: don't hardcode this

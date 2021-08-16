@@ -4,6 +4,7 @@ import express from "express";
 import * as msal from "@azure/msal-node";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import bunyan from "bunyan";
 
 import VerifyEventEmitter from "./event";
 import { decrypt } from "./crypto";
@@ -25,6 +26,8 @@ export interface ServerConfig {
 }
 
 const CreateApp = (config: ServerConfig) => {
+  const log = bunyan.createLogger({ name: "web" });
+  const msLog = log.child({ ms: true });
   const {
     ee,
     secretKey,
@@ -39,8 +42,24 @@ const CreateApp = (config: ServerConfig) => {
     },
     system: {
       loggerOptions: {
-        loggerCallback(_1: any, message: any, _3: any) {
-          console.log(message);
+        loggerCallback(logLevel: msal.LogLevel, message: string, _3: any) {
+          let logFn;
+          switch (logLevel) {
+            case msal.LogLevel.Error:
+              logFn = msLog.info;
+              break;
+            case msal.LogLevel.Warning:
+              logFn = msLog.warn;
+              break;
+            case msal.LogLevel.Info:
+              logFn = msLog.info;
+              break;
+            case msal.LogLevel.Verbose:
+              logFn = msLog.debug;
+            case msal.LogLevel.Trace:
+              logFn = msLog.trace;
+          }
+          logFn.bind(msLog)(message);
         },
         piiLoggingEnabled: false,
         logLevel: msal.LogLevel.Info,
@@ -53,7 +72,7 @@ const CreateApp = (config: ServerConfig) => {
   const app = express();
 
   let { sessionSecret } = config;
-  sessionSecret ??= (console.log("Using randomly generated session secret"), randomBytes(32).toString("hex"));
+  sessionSecret ??= (log.info("Using randomly generated session secret"), randomBytes(32).toString("hex"));
 
   const MemoryStore = createMemoryStore(session);
   app.use(
@@ -135,7 +154,8 @@ const CreateApp = (config: ServerConfig) => {
     // the auth code grant doesn't matter to us so let's just do that.
     // [1]: https://docs.microsoft.com/en-ca/azure/active-directory/develop/v2-oauth2-implicit-grant-flow
 
-    if (!req.session.verificationMessage) {
+    const verificationMessage = req.session.verificationMessage;
+    if (!verificationMessage) {
       req.session.destroy(() => {});
       res.status(400).send("Invalid session.");
       return;
@@ -162,13 +182,13 @@ const CreateApp = (config: ServerConfig) => {
     msClientApp
       .acquireTokenByCode(tokenRequest)
       .then((_response) => {
-        console.log("VERIFIED");
-        const discordData = req.session.verificationMessage!.discord;
-        ee.emitVerification(discordData.userId, discordData.guildId);
+        const { userId, guildId } = verificationMessage.discord;
+        log.info({ userId, guildId }, "Successful verification.");
+        ee.emitVerification(userId, guildId);
         res.redirect("/");
       })
       .catch((error) => {
-        console.log(error);
+        log.error({ err: error });
         res.status(500).send(error);
       });
   });
