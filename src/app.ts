@@ -110,7 +110,7 @@ const CreateApp = (config: ServerConfig) => {
 
   app.get("/verify", async (req: express.Request, res: express.Response) => {
     if (!req.session.verificationMessage) {
-      res.redirect("/");
+      return res.redirect("/");
     }
 
     const authUrlRequest: msal.AuthorizationUrlRequest = {
