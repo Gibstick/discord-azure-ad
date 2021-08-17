@@ -28,6 +28,7 @@ const serverConfig: ServerConfig = {
   ee,
   secretKey,
   sessionSecret: process.env["DISCORD_AAD_SESSION_SECRET"],
+  orgName: env("DISCORD_AAD_ORG_NAME"),
   ms: {
     clientId: env("DISCORD_AAD_CLIENT_ID"),
     clientSecret: env("DISCORD_AAD_CLIENT_SECRET"),

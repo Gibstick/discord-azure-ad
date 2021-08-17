@@ -18,6 +18,8 @@ export interface ServerConfig {
   secretKey: Uint8Array;
   /** A secret key used for express-session. */
   sessionSecret: string | null | undefined;
+  /** The name of the organization being used for verification. Shows up on the web pages. */
+  orgName: string;
   ms: {
     clientId: string;
     clientSecret: string;
@@ -31,6 +33,7 @@ const CreateApp = (config: ServerConfig) => {
   const {
     ee,
     secretKey,
+    orgName,
     ms: { clientId, clientSecret, allowedTenantId },
   } = config;
 
@@ -71,6 +74,8 @@ const CreateApp = (config: ServerConfig) => {
 
   const app = express();
 
+  app.use(express.static(__dirname + "/../static"));
+
   let { sessionSecret } = config;
   sessionSecret ??= (log.info("Using randomly generated session secret"), randomBytes(32).toString("hex"));
 
@@ -95,27 +100,31 @@ const CreateApp = (config: ServerConfig) => {
   app.set("view engine", "ejs");
 
   app.get("/", async (_req: express.Request, res: express.Response) => {
-    res.render("index", {});
+    res.render("index", { orgName });
   });
+
+  const bail = (res: express.Response) => {
+    // TODO: prettier error page
+    res.status(400).send("Error 400: invalid message.");
+  };
 
   app.get("/start", (req: express.Request, res: express.Response) => {
     const encodedMessage = req.query.m;
     if (typeof encodedMessage !== "string") {
-      // TODO: Render error message
-      res.status(400).send("Error 400: invalid message.");
-      return;
+      log.warn("Couldn't decode message.");
+      return bail(res);
     }
 
     let plain: VerificationMessage;
     try {
       plain = decrypt(encodedMessage, secretKey) as VerificationMessage;
     } catch (_e) {
-      res.status(400).send("Error 400: invalid message.");
-      return;
+      log.warn("Message decryption failed.");
+      return bail(res);
     }
     if (!isVerificationMessage(plain)) {
-      res.status(400).send("Error 400: invalid decrypted message.");
-      return;
+      log.warn("Message type validation failed.");
+      return bail(res);
     }
 
     if (isExpired(plain)) {
@@ -141,6 +150,7 @@ const CreateApp = (config: ServerConfig) => {
 
     res.render("verify", {
       loginLink: await authCodeUrl,
+      orgName,
     });
   });
 
@@ -185,13 +195,18 @@ const CreateApp = (config: ServerConfig) => {
         const { userId, guildId } = verificationMessage.discord;
         log.info({ userId, guildId }, "Successful verification.");
         ee.emitVerification(userId, guildId);
-        res.redirect("/");
+        res.redirect("/success");
       })
       .catch((error) => {
         log.error({ err: error });
         res.status(500).send(error);
       });
   });
+
+  app.get("/success", async (req: express.Request, res: express.Response) => {
+    res.render("success", {});
+  });
+
   return app;
 };
 
