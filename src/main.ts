@@ -23,12 +23,14 @@ if (secretFromEnv) {
 }
 
 const verifiedRoleName = env("DISCORD_AAD_VERIFIED_ROLE_NAME");
+const baseUrl = env("DISCORD_AAD_BASE_URL");
 
 const serverConfig: ServerConfig = {
   ee,
   secretKey,
   sessionSecret: process.env["DISCORD_AAD_SESSION_SECRET"],
   orgName: env("DISCORD_AAD_ORG_NAME"),
+  baseUrl,
   ms: {
     clientId: env("DISCORD_AAD_CLIENT_ID"),
     clientSecret: env("DISCORD_AAD_CLIENT_SECRET"),
@@ -37,7 +39,7 @@ const serverConfig: ServerConfig = {
 };
 
 const app = CreateApp(serverConfig);
-const bot = CreateBot({ ee, secretKey, verifiedRoleName });
+const bot = CreateBot({ ee, secretKey, verifiedRoleName, baseUrl });
 
 app.listen(3000, () => {});
 bot.login(env("DISCORD_AAD_BOT_TOKEN"));

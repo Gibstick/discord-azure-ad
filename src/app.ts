@@ -20,6 +20,10 @@ export interface ServerConfig {
   sessionSecret: string | null | undefined;
   /** The name of the organization being used for verification. Shows up on the web pages. */
   orgName: string;
+  /**
+   * Base URL from which the pages are being served (for now, it must be a
+   * root). NO TRAILING SLASH. */
+  baseUrl: string;
   ms: {
     clientId: string;
     clientSecret: string;
@@ -34,6 +38,7 @@ const CreateApp = (config: ServerConfig) => {
     ee,
     secretKey,
     orgName,
+    baseUrl,
     ms: { clientId, clientSecret, allowedTenantId },
   } = config;
 
@@ -143,7 +148,7 @@ const CreateApp = (config: ServerConfig) => {
 
     const authUrlRequest: msal.AuthorizationUrlRequest = {
       scopes: ["user.read"],
-      redirectUri: "http://localhost:3000/redirect", // TODO: Configurable redirect
+      redirectUri: `${baseUrl}/redirect`,
       prompt: "select_account",
     };
     const authCodeUrl = msClientApp.getAuthCodeUrl(authUrlRequest);
@@ -186,7 +191,7 @@ const CreateApp = (config: ServerConfig) => {
     const tokenRequest: msal.AuthorizationCodeRequest = {
       code: authorizationCode,
       scopes: ["user.read"],
-      redirectUri: "http://localhost:3000/redirect", // TODO: configurable redirect
+      redirectUri: `${baseUrl}/redirect`,
     };
 
     msClientApp

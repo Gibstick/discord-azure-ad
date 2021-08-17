@@ -14,11 +14,15 @@ export interface BotConfig {
   secretKey: Uint8Array;
   /** Name of the role to apply to verified users. */
   verifiedRoleName: string;
+  /**
+   * Base URL from which the pages are being served (for now, it must be a
+   * root). NO TRAILING SLASH. */
+  baseUrl: string;
 }
 
 const CreateBot = (config: BotConfig): Client => {
   const log = bunyan.createLogger({ name: "bot" });
-  const { ee, secretKey, verifiedRoleName } = config;
+  const { ee, secretKey, verifiedRoleName, baseUrl } = config;
 
   const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
@@ -81,7 +85,7 @@ const CreateBot = (config: BotConfig): Client => {
         const encodedMessage = encrypt(verificationMessage, secretKey);
         // TODO: don't hardcode the link
         await interaction.reply({
-          content: "http://localhost:3000/start?m=" + encodedMessage,
+          content: `${baseUrl}/start?m=` + encodedMessage,
           ephemeral: true,
         });
       },
