@@ -22,7 +22,7 @@ if (secretFromEnv) {
   log.info("Generating random verification secret key.");
 }
 
-const verifiedRoleName = "UW Verified"; // TODO: don't hardcode this
+const verifiedRoleName = env("DISCORD_AAD_VERIFIED_ROLE_NAME");
 
 const serverConfig: ServerConfig = {
   ee,
