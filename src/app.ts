@@ -78,14 +78,14 @@ const CreateApp = (config: ServerConfig) => {
   app.use(
     session({
       store: new MemoryStore({
-        checkPeriod: 86400000,
+        ttl: 15 * 60 * 1000, // 15m sessions, ideally
+        checkPeriod: 15 * 60 * 1000,
       }),
       secret: sessionSecret,
       saveUninitialized: false,
       cookie: {
         sameSite: "lax", // FIXME: sameSite strict doesn't work??
         httpOnly: true,
-        maxAge: 15 * 60 * 1000, // 15m sessions
       },
       resave: false,
       rolling: true,
