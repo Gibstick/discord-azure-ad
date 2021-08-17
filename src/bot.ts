@@ -71,7 +71,7 @@ const CreateBot = (config: BotConfig): Client => {
         }
         const userId = interaction.user.id;
         const verificationMessage: VerificationMessage = {
-          expiryTs: moment().add(15, "m").unix(),
+          expiryTs: moment().add(5, "m").unix(),
           discord: {
             guildId,
             userId,
