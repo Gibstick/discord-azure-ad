@@ -7,7 +7,8 @@
   "scripts": {
     "lint": "eslint 'src/**/*.ts' --quiet --fix",
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts | bunyan -o short",
-    "test": "mocha -r ts-node/register 'test/**/*.ts'"
+    "test": "mocha -r ts-node/register 'test/**/*.ts'",
+    "build": "tsc"
   },
   "dependencies": {
     "@aws-crypto/hkdf-node": "^3.0.0",
