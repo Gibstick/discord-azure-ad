@@ -83,7 +83,6 @@ const CreateBot = (config: BotConfig): Client => {
         };
 
         const encodedMessage = encrypt(verificationMessage, secretKey);
-        // TODO: don't hardcode the link
         await interaction.reply({
           content: `${baseUrl}/start?m=` + encodedMessage,
           ephemeral: true,
