@@ -1,4 +1,4 @@
-import { Client, Collection, Command, Intents } from "discord.js";
+import { Client, Collection, Command, Intents, GuildMember } from "discord.js";
 import bunyan from "bunyan";
 
 import VerifyEventEmitter from "./event";
@@ -73,7 +73,31 @@ const CreateBot = (config: BotConfig): Client => {
         if (!guildId) {
           return;
         }
-        const userId = interaction.user.id;
+
+        const member = interaction.member;
+        if (!member) {
+          return;
+        }
+
+        const userId = member.user.id;
+
+        if (!(member instanceof GuildMember)) {
+          log.warn({ guildId, userId }, "Found member that wasn't a GuildMember.");
+          return;
+        }
+
+        const hasRole =
+          member.roles.cache.find((role, _key, _collection) => {
+            return role.name === verifiedRoleName;
+          }) !== undefined;
+        if (hasRole) {
+          await interaction.reply({
+            content: "You are already verified.",
+            ephemeral: true,
+          });
+          return;
+        }
+
         const verificationMessage: VerificationMessage = {
           expiryTs: moment().add(5, "m").unix(),
           discord: {
