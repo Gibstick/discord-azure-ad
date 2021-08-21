@@ -53,6 +53,8 @@ const CreateBot = (config: BotConfig): Client => {
       return;
     }
 
+    const username = `${member.user.username}#${member.user.discriminator}`;
+    log.info({ guildId, userId, username }, "Completed verification.");
     await member.roles.add(roleToAssign, "Successful verification");
   });
 
@@ -105,6 +107,9 @@ const CreateBot = (config: BotConfig): Client => {
             userId,
           },
         };
+
+        const username = `${member.user.username}#${member.user.discriminator}`;
+        log.info({ guildId, userId, username }, "Started verification flow.");
 
         const encodedMessage = encrypt(verificationMessage, secretKey);
         await interaction.reply({
