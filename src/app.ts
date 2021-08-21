@@ -70,7 +70,7 @@ const CreateApp = (config: ServerConfig) => {
           logFn.bind(msLog)(message);
         },
         piiLoggingEnabled: false,
-        logLevel: msal.LogLevel.Info,
+        logLevel: msal.LogLevel.Warning,
       },
     },
   };
