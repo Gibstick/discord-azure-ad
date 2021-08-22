@@ -2,18 +2,16 @@ name: Publish Docker image
 on:
   push:
     branches:
-        - master
+      - master
 
 jobs:
   push_to_registry:
-
     name: Push Docker image to GitHub Packages
     runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
     steps:
-
       - name: Set short Git-SHA
         run: echo "GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | cut -c 1-8)" >> $GITHUB_ENV
 
@@ -27,8 +25,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      -
-        name: Set up QEMU
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
 
       - name: Set up Docker Buildx
@@ -42,3 +39,4 @@ jobs:
           push: true
           tags: |
             ghcr.io/gibstick/discord-azure-ad:${{ env.GITHUB_SHA_SHORT}}
+            ghcr.io/gibstick/discord-azure-ad:latest
