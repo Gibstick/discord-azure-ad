@@ -40,6 +40,9 @@ const serverConfig: ServerConfig = {
 
 const app = CreateApp(serverConfig);
 const bot = CreateBot({ ee, secretKey, verifiedRoleName, baseUrl });
+const port = parseInt(env("DISCORD_AAD_PORT", "3000"), 10);
 
-app.listen(3000, () => {});
+log.info(`Listening on port ${port}.`);
+
+app.listen(port, () => {});
 bot.login(env("DISCORD_AAD_BOT_TOKEN"));
