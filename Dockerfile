@@ -1,11 +1,10 @@
 # syntax=docker/dockerfile:1.3
 
-FROM node:16-slim
+FROM node:16-alpine AS build
 
-RUN apt-get update && apt-get update -y && rm -rf /var/lib/apt/lists/*
+RUN apk upgrade --no-cache
 
-
-WORKDIR /app
+WORKDIR /build
 
 COPY package.json package-lock.json ./
 
@@ -18,7 +17,18 @@ COPY static ./static/
 COPY views ./views/
 RUN npm run build
 
+FROM node:16-alpine AS runner
+
+RUN apk upgrade --no-cache
+RUN apk add --no-cache dumb-init
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci --only=production
+COPY --from=build /build/dist ./dist
+
 EXPOSE 3000
 USER node
 ENV NODE_ENV=production
-CMD ["node", "./dist/main.js"]
+CMD ["dumb-init", "node", "./dist/main.js"]

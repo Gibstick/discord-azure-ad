@@ -102,7 +102,11 @@ Microsoft as they will not send OAuth2 redirects to endpoints without it.
 Modify the `-p` port mapping to whatever your deployment uses.
 
 ```sh
-docker run --env-file .env -p 3000:3000 ghcr.io/gibstick/discord-azure-ad`
+docker run \
+   --env-file .env \
+   -p 3000:3000 \
+   --name discord-azure-ad \
+   ghcr.io/gibstick/discord-azure-ad
 ```
 
 ### Native
