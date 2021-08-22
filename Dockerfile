@@ -28,6 +28,9 @@ COPY package.json package-lock.json ./
 RUN npm ci --only=production
 COPY --from=build /build/dist ./dist
 
+COPY static ./static/
+COPY views ./views/
+
 EXPOSE 3000
 USER node
 ENV NODE_ENV=production
