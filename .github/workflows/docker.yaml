@@ -43,3 +43,5 @@ jobs:
           tags: |
             ghcr.io/gibstick/discord-azure-ad:${{ env.GITHUB_SHA_SHORT}}
             ghcr.io/gibstick/discord-azure-ad:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
